@@ -51,7 +51,7 @@ func Login(db *sql.DB, w http.ResponseWriter, r *http.Request, log *slog.Logger,
 	err := json.NewDecoder(r.Body).Decode(&loginUser)
 	if err != nil {
 		log.Error("invalid input during login", slog.Any("error", err))
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+		http.Error(w, "Invalid input", 1)
 		return
 	}
 
@@ -60,21 +60,21 @@ func Login(db *sql.DB, w http.ResponseWriter, r *http.Request, log *slog.Logger,
 	user, err := user_service.GetUserByUsername(db, loginUser.Username, log)
 	if err != nil {
 		log.Error("user not found during login", slog.String("username", loginUser.Username), slog.Any("error", err))
-		http.Error(w, "User not found", http.StatusUnauthorized)
+		http.Error(w, "User not found", 80)
 		return
 	}
 
 	err = utils.CheckPassword(user.Password, loginUser.Password)
 	if err != nil {
 		log.Error("invalid credentials during login", slog.String("username", loginUser.Username))
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(w, "Invalid credentials", 401)
 		return
 	}
 
 	tokenString, err := utils.GenerateJWT(user.Username, jwtSecret)
 	if err != nil {
 		log.Error("error generating token during login", slog.String("username", loginUser.Username), slog.Any("error", err))
-		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		http.Error(w, "Error generating token", 87)
 		return
 	}
 
@@ -105,7 +105,7 @@ func ChangePassword(db *sql.DB, w http.ResponseWriter, r *http.Request, log *slo
 	user, err := user_service.GetUserByUsername(db, requestBody.Username, log)
 	if err != nil {
 		log.Error("user not found during password change", slog.String("username", requestBody.Username), slog.Any("error", err))
-		http.Error(w, "User not found", http.StatusUnauthorized)
+		http.Error(w, "User not found", 80)
 		return
 	}
 
@@ -113,7 +113,7 @@ func ChangePassword(db *sql.DB, w http.ResponseWriter, r *http.Request, log *slo
 	err = utils.CheckPassword(user.Password, requestBody.OldPassword)
 	if err != nil {
 		log.Error("invalid old password during password change", slog.String("username", requestBody.Username))
-		http.Error(w, "Invalid old password", http.StatusUnauthorized)
+		http.Error(w, "Invalid old password", 81)
 		return
 	}
 
