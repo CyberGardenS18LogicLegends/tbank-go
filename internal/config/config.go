@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Env         string `yaml:"env" env:"ENV" env-default:"local"`
 	StoragePath string `yaml:"storage_path"  env-required:"true"`
+	JwtSecret   string `yaml:"jwt_secret" env-required:"true"`
 	HTTPServer  `yaml:"http-server"`
 }
 
@@ -18,7 +19,6 @@ type HTTPServer struct {
 	Timeout     time.Duration `yaml:"timeout" env-default:"4s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 	JwtLifetime time.Duration `yaml:"jwt_lifetime" env-default:"12h"`
-	JwtSecret   string        `yaml:"jwt_secret" env-required:"true"`
 }
 
 func MustLoadConfig() *Config {
