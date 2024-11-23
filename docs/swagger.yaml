@@ -1,0 +1,347 @@
+basePath: /api
+definitions:
+  auth.AuthRequest:
+    description: Request body for user authentication operations.
+    properties:
+      password:
+        example: password123
+        type: string
+      username:
+        example: johndoe
+        type: string
+    type: object
+  auth.ChangePasswordRequest:
+    description: Request body for changing the user's password.
+    properties:
+      new_password:
+        example: newpassword123
+        type: string
+      old_password:
+        example: oldpassword123
+        type: string
+      username:
+        example: johndoe
+        type: string
+    type: object
+  expenses.AddExpenseRequest:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      date:
+        type: string
+      description:
+        type: string
+    type: object
+  expenses.Expense:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      date:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      description:
+        description: Description of the expense
+        type: string
+      id:
+        type: integer
+    type: object
+  incomes.Income:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      date:
+        description: 'Формат: YYYY-MM-DD'
+        type: string
+      description:
+        description: Описание
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact: {}
+  description: Login/Reg Api CG T-Bank
+  title: TBank API
+  version: "1.0"
+paths:
+  /api/expenses:
+    get:
+      consumes:
+      - application/json
+      description: Fetches all expenses for the authenticated user within the specified
+        date range (from YYYY-MM-DD to YYYY-MM-DD)
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: to
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of expenses
+          schema:
+            items:
+              $ref: '#/definitions/expenses.Expense'
+            type: array
+        "400":
+          description: Invalid date format
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Failed to fetch expenses
+          schema:
+            type: string
+      summary: Get expenses for a user in a given date range
+      tags:
+      - Expenses
+    post:
+      consumes:
+      - application/json
+      description: Add a new expense for the authenticated user
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Expense details
+        in: body
+        name: expense
+        required: true
+        schema:
+          $ref: '#/definitions/expenses.AddExpenseRequest'
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Expense added successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Failed to add expense
+          schema:
+            type: string
+      summary: Add a new expense
+      tags:
+      - Expenses
+  /api/income:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all income records for a user within the specified date
+        range.
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: to
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Incomes list
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Invalid date format or missing parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Incomes within a date range
+      tags:
+      - incomes
+  /api/incomes:
+    post:
+      consumes:
+      - application/json
+      description: Add a new income record for the authenticated user
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Income details
+        in: body
+        name: income
+        required: true
+        schema:
+          $ref: '#/definitions/incomes.Income'
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Income added successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Failed to add income
+          schema:
+            type: string
+      summary: Add a new income
+      tags:
+      - Incomes
+  /change-password:
+    post:
+      consumes:
+      - application/json
+      description: Update the user's password after verifying the old password
+      parameters:
+      - description: Change Password Information
+        in: body
+        name: changePassword
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ChangePasswordRequest'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Password updated successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "401":
+          description: Invalid old password
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Error updating password
+          schema:
+            type: string
+      summary: Change user password
+      tags:
+      - Auth
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return a JWT
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/auth.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "401":
+          description: Invalid credentials
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Error generating token
+          schema:
+            type: string
+      summary: Login a user
+      tags:
+      - Auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user in the system with a username and password
+      parameters:
+      - description: User Information
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/auth.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "500":
+          description: Error registering user
+          schema:
+            type: string
+      summary: Register a new user
+      tags:
+      - Auth
+swagger: "2.0"

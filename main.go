@@ -70,10 +70,12 @@ func main() {
 
 		r.With(auth.AuthMiddleware(cfg.JwtSecret, log)).Route("/income", func(r chi.Router) {
 			r.Post("/", incomes.AddIncomeHandler(db, log))
+			r.Get("/", incomes.GetIncomesHandler(db, log))
 		})
 
 		r.With(auth.AuthMiddleware(cfg.JwtSecret, log)).Route("/expense", func(r chi.Router) {
 			r.Post("/", expenses.AddExpenseHandler(db, log))
+			r.Get("/", expenses.GetExpensesHandler(db, log))
 		})
 	})
 
