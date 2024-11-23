@@ -11,8 +11,8 @@ import (
 type Income struct {
 	Category    string  `json:"category"`
 	Amount      float64 `json:"amount"`
-	Date        string  `json:"date"`        // Формат: YYYY-MM-DD
-	Description string  `json:"description"` // Описание
+	Date        string  `json:"date"`
+	Description string  `json:"description"`
 }
 
 // @Summary Add a new income
@@ -38,7 +38,6 @@ func AddIncomeHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		// Проверяем дату
 		if _, err := time.Parse("2006-01-02", income.Date); err != nil {
 			log.Error("invalid date format", slog.Any("error", err))
 			http.Error(w, "Invalid date format (YYYY-MM-DD)", http.StatusBadRequest)

@@ -2,7 +2,7 @@ env: "dev" #  dev prod
 storage_path: "./storage/storage.db"
 jwt_secret: "c2FzaGFrcnV0b2k="
 http-server:
-  address: "localhost:8082"
+  address: "localhost:8443"
   timeout: 4s
   idle_timeout: 60s
   jwt_lifetime: 12h

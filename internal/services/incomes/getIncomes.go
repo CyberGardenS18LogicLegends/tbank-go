@@ -11,7 +11,7 @@ import (
 // GetIncomesHandler retrieves incomes for a user within the specified date range
 // @Summary Get Incomes within a date range
 // @Description Retrieves all income records for a user within the specified date range.
-// @Tags incomes
+// @Tags Incomes
 // @Accept json
 // @Produce json
 // @Param from query string true "Start date (YYYY-MM-DD)"
@@ -23,7 +23,6 @@ import (
 // @Router /api/income [get]
 func GetIncomesHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		startDate := r.URL.Query().Get("from")
 		endDate := r.URL.Query().Get("to")
 
@@ -34,6 +33,7 @@ func GetIncomesHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
+		// Validate date formats
 		if _, err := time.Parse("2006-01-02", startDate); err != nil {
 			log.Error("invalid start_date format", slog.Any("error", err))
 			http.Error(w, "Invalid start_date format (YYYY-MM-DD)", http.StatusBadRequest)
@@ -48,7 +48,7 @@ func GetIncomesHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 		userUID := r.Context().Value("userUID").(string)
 
 		query := `
-			SELECT category, amount, date, description 
+			SELECT id, category, amount, date, description 
 			FROM income 
 			WHERE user_uid = ? AND date BETWEEN ? AND ?
 		`
@@ -63,14 +63,16 @@ func GetIncomesHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 
 		var incomes []map[string]interface{}
 		for rows.Next() {
+			var id int
 			var category, date, description string
 			var amount float64
-			if err := rows.Scan(&category, &amount, &date, &description); err != nil {
+			if err := rows.Scan(&id, &category, &amount, &date, &description); err != nil {
 				log.Error("failed to scan row", slog.Any("error", err))
 				http.Error(w, "Failed to scan income data", http.StatusInternalServerError)
 				return
 			}
 			incomes = append(incomes, map[string]interface{}{
+				"id":          id,
 				"category":    category,
 				"amount":      amount,
 				"date":        date,

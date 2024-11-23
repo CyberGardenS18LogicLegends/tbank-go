@@ -29,6 +29,9 @@ const (
 // @host localhost:8082
 // @BasePath /api
 func main() {
+
+	//certFile := "C:\\Certbot\\live\\cg-api.ffokildam.ru\\fullchain.pem"
+	//keyFile := "C:\\Certbot\\live\\cg-api.ffokildam.ru\\privkey.pem"
 	cfg := config.MustLoadConfig()
 	log := setupLogger(cfg.Env)
 
@@ -38,7 +41,6 @@ func main() {
 		log.Error("failed to initialize database", slog.Any("error", err))
 		os.Exit(1)
 	}
-
 	defer func() {
 		if err := db.Close(); err != nil {
 			log.Error("failed to close database", slog.Any("error", err))
@@ -55,33 +57,30 @@ func main() {
 	router.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	router.Route("/api", func(r chi.Router) {
-
 		r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
 			auth.Register(db, w, r, log)
 		})
-
 		r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
 			auth.Login(db, w, r, log, cfg.JwtSecret, cfg.JwtLifetime)
 		})
-
 		r.Post("/change-password", func(w http.ResponseWriter, r *http.Request) {
 			auth.ChangePassword(db, w, r, log)
 		})
-
 		r.With(auth.AuthMiddleware(cfg.JwtSecret, log)).Route("/income", func(r chi.Router) {
 			r.Post("/", incomes.AddIncomeHandler(db, log))
 			r.Get("/", incomes.GetIncomesHandler(db, log))
+			r.Delete("/{id}", incomes.DeleteIncomeHandler(db, log))
 		})
-
 		r.With(auth.AuthMiddleware(cfg.JwtSecret, log)).Route("/expense", func(r chi.Router) {
 			r.Post("/", expenses.AddExpenseHandler(db, log))
 			r.Get("/", expenses.GetExpensesHandler(db, log))
+			r.Delete("/{id}", expenses.DeleteExpenseHandler(db, log))
 		})
 	})
 
-	log.Info("starting server", slog.String("address", cfg.Address))
-	if err := http.ListenAndServe(cfg.Address, router); err != nil {
-		log.Error("server failed", slog.Any("error", err))
+	log.Info("starting HTTPS server", slog.String("address", cfg.Address))
+	if err := http.ListenAndServeTLS(cfg.Address, "server.crt", "server.key", router); err != nil {
+		log.Error("HTTPS server failed", slog.Any("error", err))
 		os.Exit(1)
 	}
 }
