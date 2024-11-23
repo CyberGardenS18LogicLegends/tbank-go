@@ -5,11 +5,16 @@ import (
 	"net/http"
 	"os"
 	"tbank-go/internal/config"
-	"tbank-go/internal/services"
+	"tbank-go/internal/services/auth"
+	"tbank-go/internal/services/expenses"
+	"tbank-go/internal/services/incomes"
 	"tbank-go/internal/sqlite"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	httpSwagger "github.com/swaggo/http-swagger/v2"
+	_ "tbank-go/docs"
 )
 
 const (
@@ -17,6 +22,12 @@ const (
 	envProd = "prod"
 )
 
+// @title TBank API
+// @version 1.0
+// @description Login/Reg Api CG T-Bank
+
+// @host localhost:8082
+// @BasePath /api
 func main() {
 	cfg := config.MustLoadConfig()
 	log := setupLogger(cfg.Env)
@@ -37,27 +48,35 @@ func main() {
 	log.Info("config loaded", slog.String("env", cfg.Env))
 	log.Debug("debug messages enabled")
 
-	// Set up router
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 
-	// Define API routes
+	router.Get("/swagger/*", httpSwagger.WrapHandler)
+
 	router.Route("/api", func(r chi.Router) {
+
 		r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
-			services.Register(db, w, r, log)
+			auth.Register(db, w, r, log)
 		})
 
 		r.Post("/login", func(w http.ResponseWriter, r *http.Request) {
-			services.Login(db, w, r, log, cfg.JwtSecret)
+			auth.Login(db, w, r, log, cfg.JwtSecret, cfg.JwtLifetime)
 		})
 
 		r.Post("/change-password", func(w http.ResponseWriter, r *http.Request) {
-			services.ChangePassword(db, w, r, log)
+			auth.ChangePassword(db, w, r, log)
+		})
+
+		r.With(auth.AuthMiddleware(cfg.JwtSecret, log)).Route("/income", func(r chi.Router) {
+			r.Post("/", incomes.AddIncomeHandler(db, log))
+		})
+
+		r.With(auth.AuthMiddleware(cfg.JwtSecret, log)).Route("/expense", func(r chi.Router) {
+			r.Post("/", expenses.AddExpenseHandler(db, log))
 		})
 	})
 
-	// Start the server
 	log.Info("starting server", slog.String("address", cfg.Address))
 	if err := http.ListenAndServe(cfg.Address, router); err != nil {
 		log.Error("server failed", slog.Any("error", err))

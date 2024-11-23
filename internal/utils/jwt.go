@@ -8,16 +8,16 @@ import (
 )
 
 type Claims struct {
-	Username string `json:"username"`
+	UID string `json:"uid"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(username string, jwtSecret string) (string, error) {
-	expirationTime := time.Now().Add(5 * time.Minute)
+func GenerateJWT(uid string, jwtSecret string, jwtLifetime time.Duration) (string, error) {
+	expirationTime := time.Now().Add(jwtLifetime)
 	claims := &Claims{
-		Username: username,
+		UID: uid,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime), // Use NewNumericDate for timestamps
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
 	}
 
@@ -29,15 +29,14 @@ func CheckPassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-func ParseJWT(tokenString string) (string, error) {
+func ParseJWT(tokenString string, jwtSecret string) (string, error) {
 	claims := &Claims{}
 
-	// Replace config.JwtKey with the actual key used for validation
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return []byte("your_secret_key"), nil
+		return []byte(jwtSecret), nil
 	})
 
 	if err != nil {
@@ -48,5 +47,5 @@ func ParseJWT(tokenString string) (string, error) {
 		return "", errors.New("invalid token")
 	}
 
-	return claims.Username, nil
+	return claims.UID, nil
 }
