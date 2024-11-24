@@ -15,74 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/expense/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes a specific expense record by ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Expenses"
-                ],
-                "summary": "Delete Expense",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Expense ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success message",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid ID parameter",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Expense not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/expenses": {
+        "/api/expense": {
             "get": {
                 "description": "Fetches all expenses for the authenticated user within the specified date range (from YYYY-MM-DD to YYYY-MM-DD)",
                 "consumes": [
@@ -94,7 +27,6 @@ const docTemplate = `{
                 "tags": [
                     "Expenses"
                 ],
-                "summary": "Get expenses for a user in a given date range",
                 "parameters": [
                     {
                         "type": "string",
@@ -149,7 +81,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Add a new expense for the authenticated user",
+                "description": "Adds a new expense record and adjusts the user's expense balance.",
                 "consumes": [
                     "application/json"
                 ],
@@ -159,7 +91,7 @@ const docTemplate = `{
                 "tags": [
                     "Expenses"
                 ],
-                "summary": "Add a new expense",
+                "summary": "Add Expense",
                 "parameters": [
                     {
                         "type": "string",
@@ -169,17 +101,17 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Expense details",
+                        "description": "New expense details",
                         "name": "expense",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/expenses.AddExpenseRequest"
+                            "$ref": "#/definitions/expenses.UpdateExpenseRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Expense added successfully",
                         "schema": {
                             "type": "string"
@@ -201,6 +133,73 @@ const docTemplate = `{
                         "description": "Failed to add expense",
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/expense/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a specific expense record and updates the user's expense balance.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "Delete Expense",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Expense ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid ID parameter",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Expense not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -266,6 +265,62 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Add a new income record for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Incomes"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Income details",
+                        "name": "income",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/incomes.Income"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Income added successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to add income",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         },
         "/api/income/{id}": {
@@ -275,7 +330,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Deletes a specific income record by its unique ID.",
+                "description": "Deletes a specific income record by its unique ID and updates the user's income balance.",
                 "consumes": [
                     "application/json"
                 ],
@@ -327,60 +382,94 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/incomes": {
-            "post": {
-                "description": "Add a new income record for the authenticated user",
+        "/api/users/": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetches all information about the logged-in user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get User Info",
+                "responses": {
+                    "200": {
+                        "description": "User info",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the first and second name of the logged-in user.",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
-                    "Incomes"
+                    "Users"
                 ],
-                "summary": "Add a new income",
+                "summary": "Update User Names",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "Income details",
-                        "name": "income",
+                        "description": "First and Second Name",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/incomes.Income"
+                            "$ref": "#/definitions/users.UpdateUserNamesRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Income added successfully",
+                    "200": {
+                        "description": "Success message",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
                         "description": "Invalid input",
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "500": {
-                        "description": "Failed to add income",
+                        "description": "Internal server error",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -588,23 +677,6 @@ const docTemplate = `{
                 }
             }
         },
-        "expenses.AddExpenseRequest": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "category": {
-                    "type": "string"
-                },
-                "date": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                }
-            }
-        },
         "expenses.Expense": {
             "type": "object",
             "properties": {
@@ -627,6 +699,23 @@ const docTemplate = `{
                 }
             }
         },
+        "expenses.UpdateExpenseRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
         "incomes.Income": {
             "type": "object",
             "properties": {
@@ -643,18 +732,31 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "users.UpdateUserNamesRequest": {
+            "type": "object",
+            "properties": {
+                "first_name": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "second_name": {
+                    "type": "string",
+                    "example": "Doe"
+                }
+            }
         }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8082",
+	Version:          "1.4",
+	Host:             "https://cg-api.ffokildam.ru:8443/",
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "TBank API",
-	Description:      "Login/Reg Api CG T-Bank",
+	Description:      "Api CG T-Bank Finance management",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

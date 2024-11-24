@@ -26,14 +26,12 @@ func GetIncomesHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 		startDate := r.URL.Query().Get("from")
 		endDate := r.URL.Query().Get("to")
 
-		// Check if the dates are provided
 		if startDate == "" || endDate == "" {
 			log.Error("missing date parameter", slog.String("start_date", startDate), slog.String("end_date", endDate))
 			http.Error(w, "Both start_date and end_date are required", http.StatusBadRequest)
 			return
 		}
 
-		// Validate date formats
 		if _, err := time.Parse("2006-01-02", startDate); err != nil {
 			log.Error("invalid start_date format", slog.Any("error", err))
 			http.Error(w, "Invalid start_date format (YYYY-MM-DD)", http.StatusBadRequest)

@@ -8,10 +8,12 @@ import (
 	"tbank-go/internal/services/auth"
 	"tbank-go/internal/services/expenses"
 	"tbank-go/internal/services/incomes"
+	"tbank-go/internal/services/users"
 	"tbank-go/internal/sqlite"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 	_ "tbank-go/docs"
@@ -23,10 +25,10 @@ const (
 )
 
 // @title TBank API
-// @version 1.0
-// @description Login/Reg Api CG T-Bank
+// @version 1.4
+// @description Api CG T-Bank Finance management
 
-// @host localhost:8082
+// @host https://cg-api.ffokildam.ru:8443/
 // @BasePath /api
 func main() {
 
@@ -35,7 +37,6 @@ func main() {
 	cfg := config.MustLoadConfig()
 	log := setupLogger(cfg.Env)
 
-	// Initialize the database
 	db, err := sqlite.InitializeDatabase(cfg.StoragePath, log)
 	if err != nil {
 		log.Error("failed to initialize database", slog.Any("error", err))
@@ -51,6 +52,15 @@ func main() {
 	log.Debug("debug messages enabled")
 
 	router := chi.NewRouter()
+
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:63342"}, // Allow specific origin
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowCredentials: true, // Allow cookies, authorization headers, etc.
+		MaxAge:           300,  // Cache preflight requests for 5 minutes
+	}))
+
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 
@@ -76,8 +86,13 @@ func main() {
 			r.Get("/", expenses.GetExpensesHandler(db, log))
 			r.Delete("/{id}", expenses.DeleteExpenseHandler(db, log))
 		})
+		r.With(auth.AuthMiddleware(cfg.JwtSecret, log)).Route("/users", func(r chi.Router) {
+			r.Put("/", users.UpdateUserNamesHandler(db, log))
+			r.Get("/", users.GetUserInfoHandler(db, log))
+		})
 	})
 
+	// Start the HTTPS server
 	log.Info("starting HTTPS server", slog.String("address", cfg.Address))
 	if err := http.ListenAndServeTLS(cfg.Address, "server.crt", "server.key", router); err != nil {
 		log.Error("HTTPS server failed", slog.Any("error", err))
@@ -91,7 +106,6 @@ func setupLogger(env string) *slog.Logger {
 	switch env {
 	case envDev:
 		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-
 	case envProd:
 		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	}

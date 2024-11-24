@@ -23,17 +23,6 @@ definitions:
         example: johndoe
         type: string
     type: object
-  expenses.AddExpenseRequest:
-    properties:
-      amount:
-        type: number
-      category:
-        type: string
-      date:
-        type: string
-      description:
-        type: string
-    type: object
   expenses.Expense:
     properties:
       amount:
@@ -49,6 +38,17 @@ definitions:
       id:
         type: integer
     type: object
+  expenses.UpdateExpenseRequest:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      date:
+        type: string
+      description:
+        type: string
+    type: object
   incomes.Income:
     properties:
       amount:
@@ -60,57 +60,23 @@ definitions:
       description:
         type: string
     type: object
-host: localhost:8082
+  users.UpdateUserNamesRequest:
+    properties:
+      first_name:
+        example: John
+        type: string
+      second_name:
+        example: Doe
+        type: string
+    type: object
+host: https://cg-api.ffokildam.ru:8443/
 info:
   contact: {}
-  description: Login/Reg Api CG T-Bank
+  description: Api CG T-Bank Finance management
   title: TBank API
-  version: "1.0"
+  version: "1.4"
 paths:
-  /api/expense/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes a specific expense record by ID.
-      parameters:
-      - description: Expense ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Success message
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Invalid ID parameter
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Expense not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Delete Expense
-      tags:
-      - Expenses
-  /api/expenses:
+  /api/expense:
     get:
       consumes:
       - application/json
@@ -153,29 +119,28 @@ paths:
           description: Failed to fetch expenses
           schema:
             type: string
-      summary: Get expenses for a user in a given date range
       tags:
       - Expenses
     post:
       consumes:
       - application/json
-      description: Add a new expense for the authenticated user
+      description: Adds a new expense record and adjusts the user's expense balance.
       parameters:
       - description: Bearer token
         in: header
         name: Authorization
         required: true
         type: string
-      - description: Expense details
+      - description: New expense details
         in: body
         name: expense
         required: true
         schema:
-          $ref: '#/definitions/expenses.AddExpenseRequest'
+          $ref: '#/definitions/expenses.UpdateExpenseRequest'
       produces:
       - text/plain
       responses:
-        "201":
+        "200":
           description: Expense added successfully
           schema:
             type: string
@@ -191,7 +156,51 @@ paths:
           description: Failed to add expense
           schema:
             type: string
-      summary: Add a new expense
+      summary: Add Expense
+      tags:
+      - Expenses
+  /api/expense/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a specific expense record and updates the user's expense
+        balance.
+      parameters:
+      - description: Expense ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid ID parameter
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Expense not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Expense
       tags:
       - Expenses
   /api/income:
@@ -236,46 +245,6 @@ paths:
       summary: Get Incomes within a date range
       tags:
       - Incomes
-  /api/income/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes a specific income record by its unique ID.
-      parameters:
-      - description: Income ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Success message
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Invalid ID
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Income not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Delete Income by ID
-      tags:
-      - Incomes
-  /api/incomes:
     post:
       consumes:
       - application/json
@@ -311,9 +280,107 @@ paths:
           description: Failed to add income
           schema:
             type: string
-      summary: Add a new income
       tags:
       - Incomes
+  /api/income/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a specific income record by its unique ID and updates the
+        user's income balance.
+      parameters:
+      - description: Income ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Income not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Income by ID
+      tags:
+      - Incomes
+  /api/users/:
+    get:
+      description: Fetches all information about the logged-in user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User info
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get User Info
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Updates the first and second name of the logged-in user.
+      parameters:
+      - description: First and Second Name
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/users.UpdateUserNamesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update User Names
+      tags:
+      - Users
   /change-password:
     post:
       consumes:

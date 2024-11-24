@@ -16,7 +16,7 @@ type Expense struct {
 	Description string  `json:"description"` // Description of the expense
 }
 
-// @Summary Get expenses for a user in a given date range
+// GetExpensesHandler @Summary Get expenses for a user in a given date range
 // @Description Fetches all expenses for the authenticated user within the specified date range (from YYYY-MM-DD to YYYY-MM-DD)
 // @Tags Expenses
 // @Accept json
@@ -28,7 +28,7 @@ type Expense struct {
 // @Failure 400 {string} string "Invalid date format"
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 500 {string} string "Failed to fetch expenses"
-// @Router /api/expenses [get]
+// @Router /api/expense [get]
 func GetExpensesHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userUID := r.Context().Value("userUID").(string)

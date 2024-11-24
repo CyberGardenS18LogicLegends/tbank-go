@@ -33,8 +33,9 @@ func (u *User) HashPassword(log *slog.Logger) error {
 
 func (u *User) Create(db *sql.DB, log *slog.Logger) error {
 	_, err := db.Exec(
-		"INSERT INTO users (uid, username, password, registered_at) VALUES (?, ?, ?, ?)",
-		u.UID, u.Username, u.Password, u.RegisteredAt,
+		`INSERT INTO users (uid, username, password, registered_at, first_name, second_name, incomes_balance, expenses_balance) 
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		u.UID, u.Username, u.Password, u.RegisteredAt, "", "", 0, 0,
 	)
 
 	if err != nil {

@@ -40,6 +40,10 @@ func createTables(db *sql.DB, log *slog.Logger) error {
 		uid TEXT NOT NULL UNIQUE,
 		username TEXT NOT NULL UNIQUE,
 		password TEXT NOT NULL,
+		first_name TEXT,
+		second_name TEXT,
+		incomes_balance INTEGER,
+		expenses_balance INTEGER,
 		registered_at TEXT NOT NULL
 	);`
 

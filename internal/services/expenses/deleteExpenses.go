@@ -2,15 +2,14 @@ package expenses
 
 import (
 	"database/sql"
+	"github.com/go-chi/chi/v5"
 	"log/slog"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
 )
 
-// DeleteExpenseHandler deletes an expense by its ID
+// DeleteExpenseHandler deletes an expense by its ID and adjusts the user's expense balance
 // @Summary Delete Expense
-// @Description Deletes a specific expense record by ID.
+// @Description Deletes a specific expense record and updates the user's expense balance.
 // @Tags Expenses
 // @Accept json
 // @Produce json
@@ -32,17 +31,17 @@ func DeleteExpenseHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 
 		userUID := r.Context().Value("userUID").(string)
 
-		// Check ownership of the expense
 		var ownerUID string
-		query := `SELECT user_uid FROM expenses WHERE id = ?`
-		err := db.QueryRow(query, expenseID).Scan(&ownerUID)
+		var expenseAmount float64
+		query := `SELECT user_uid, amount FROM expenses WHERE id = ?`
+		err := db.QueryRow(query, expenseID).Scan(&ownerUID, &expenseAmount)
 		if err == sql.ErrNoRows {
 			log.Warn("expense not found", slog.String("expenseID", expenseID))
 			http.Error(w, "Expense not found", http.StatusNotFound)
 			return
 		} else if err != nil {
-			log.Error("failed to fetch expense owner", slog.Any("error", err))
-			http.Error(w, "Failed to fetch expense owner", http.StatusInternalServerError)
+			log.Error("failed to fetch expense details", slog.Any("error", err))
+			http.Error(w, "Failed to fetch expense details", http.StatusInternalServerError)
 			return
 		}
 
@@ -52,28 +51,46 @@ func DeleteExpenseHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		deleteQuery := `DELETE FROM expenses WHERE id = ?`
-		result, err := db.Exec(deleteQuery, expenseID)
+		tx, err := db.Begin()
 		if err != nil {
+			log.Error("failed to start transaction", slog.Any("error", err))
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		deleteQuery := `DELETE FROM expenses WHERE id = ?`
+		result, err := tx.Exec(deleteQuery, expenseID)
+		if err != nil {
+			tx.Rollback()
 			log.Error("failed to delete expense", slog.String("expenseID", expenseID), slog.Any("error", err))
 			http.Error(w, "Failed to delete expense", http.StatusInternalServerError)
 			return
 		}
 
 		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			log.Error("failed to get rows affected", slog.Any("error", err))
-			http.Error(w, "Failed to determine deletion status", http.StatusInternalServerError)
-			return
-		}
-
-		if rowsAffected == 0 {
+		if err != nil || rowsAffected == 0 {
+			tx.Rollback()
 			log.Warn("expense not found during deletion", slog.String("expenseID", expenseID))
 			http.Error(w, "Expense not found", http.StatusNotFound)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		updateBalanceQuery := `UPDATE users SET expenses_balance = expenses_balance - ? WHERE uid = ?`
+		_, err = tx.Exec(updateBalanceQuery, expenseAmount, userUID)
+		if err != nil {
+			tx.Rollback()
+			log.Error("failed to adjust expense balance", slog.Any("error", err))
+			http.Error(w, "Failed to adjust expense balance", http.StatusInternalServerError)
+			return
+		}
+
+		if err := tx.Commit(); err != nil {
+			log.Error("failed to commit transaction", slog.Any("error", err))
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		log.Info("expense deleted successfully", slog.String("expenseID", expenseID), slog.String("userUID", userUID))
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"message": "Expense deleted successfully"}`))
 	}

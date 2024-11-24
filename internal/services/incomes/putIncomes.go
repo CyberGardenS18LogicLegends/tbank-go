@@ -15,7 +15,7 @@ type Income struct {
 	Description string  `json:"description"`
 }
 
-// @Summary Add a new income
+// AddIncomeHandler @Summary Add a new income
 // @Description Add a new income record for the authenticated user
 // @Tags Incomes
 // @Accept json
@@ -26,7 +26,7 @@ type Income struct {
 // @Failure 400 {string} string "Invalid input"
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 500 {string} string "Failed to add income"
-// @Router /api/incomes [post]
+// @Router /api/income [post]
 func AddIncomeHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var income Income
@@ -44,11 +44,34 @@ func AddIncomeHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		query := `INSERT INTO income (user_uid, category, amount, date, description) VALUES (?, ?, ?, ?, ?)`
-		_, err := db.Exec(query, userUID, income.Category, income.Amount, income.Date, income.Description)
+		tx, err := db.Begin()
 		if err != nil {
+			log.Error("failed to start transaction", slog.Any("error", err))
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		query := `INSERT INTO income (user_uid, category, amount, date, description) VALUES (?, ?, ?, ?, ?)`
+		_, err = tx.Exec(query, userUID, income.Category, income.Amount, income.Date, income.Description)
+		if err != nil {
+			tx.Rollback()
 			log.Error("failed to add income", slog.Any("error", err))
 			http.Error(w, "Failed to add income", http.StatusInternalServerError)
+			return
+		}
+
+		balanceUpdateQuery := `UPDATE users SET incomes_balance = incomes_balance + ? WHERE uid = ?`
+		_, err = tx.Exec(balanceUpdateQuery, income.Amount, userUID)
+		if err != nil {
+			tx.Rollback()
+			log.Error("failed to update income balance", slog.Any("error", err))
+			http.Error(w, "Failed to update income balance", http.StatusInternalServerError)
+			return
+		}
+
+		if err := tx.Commit(); err != nil {
+			log.Error("failed to commit transaction", slog.Any("error", err))
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
