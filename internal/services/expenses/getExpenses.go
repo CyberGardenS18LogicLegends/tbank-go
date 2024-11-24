@@ -72,14 +72,12 @@ func GetExpensesHandler(db *sql.DB, log *slog.Logger) http.HandlerFunc {
 			expenses = append(expenses, expense)
 		}
 
-		// Check for any errors while scanning
 		if err := rows.Err(); err != nil {
 			log.Error("error iterating over expenses", slog.Any("error", err))
 			http.Error(w, "Error processing expenses", http.StatusInternalServerError)
 			return
 		}
 
-		// Return the expenses in JSON format
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(expenses); err != nil {

@@ -7,6 +7,7 @@ import (
 	"tbank-go/internal/config"
 	"tbank-go/internal/services/auth"
 	"tbank-go/internal/services/expenses"
+	"tbank-go/internal/services/geminiAnalysis"
 	"tbank-go/internal/services/incomes"
 	"tbank-go/internal/services/users"
 	"tbank-go/internal/sqlite"
@@ -33,7 +34,7 @@ const (
 func main() {
 
 	//certFile := "C:\\Certbot\\live\\cg-api.ffokildam.ru\\fullchain.pem"
-	//keyFile := "C:\\Certbot\\live\\cg-api.ffokildam.ru\\privkey.pem"
+	//	keyFile := "C:\\Certbot\\live\\cg-api.ffokildam.ru\\privkey.pem"
 	cfg := config.MustLoadConfig()
 	log := setupLogger(cfg.Env)
 
@@ -89,6 +90,9 @@ func main() {
 		r.With(auth.AuthMiddleware(cfg.JwtSecret, log)).Route("/users", func(r chi.Router) {
 			r.Put("/", users.UpdateUserNamesHandler(db, log))
 			r.Get("/", users.GetUserInfoHandler(db, log))
+		})
+		r.With(auth.AuthMiddleware(cfg.JwtSecret, log)).Route("/ai-advice", func(r chi.Router) {
+			r.Get("/", geminiAnalysis.GenerateFinancialAdviceHandler(db, log))
 		})
 	})
 

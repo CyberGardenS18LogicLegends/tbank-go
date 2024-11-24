@@ -26,7 +26,7 @@ type ChangePasswordRequest struct {
 	NewPassword string `json:"new_password" example:"newpassword123"`
 }
 
-// @Summary Register a new user
+// Register @Summary Register a new user
 // @Description Create a new user in the system with a username and password
 // @Tags Auth
 // @Accept json

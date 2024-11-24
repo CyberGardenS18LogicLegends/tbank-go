@@ -49,6 +49,11 @@ definitions:
       description:
         type: string
     type: object
+  geminiAnalysis.FinancialAdviceResponse:
+    properties:
+      advice:
+        type: string
+    type: object
   incomes.Income:
     properties:
       amount:
@@ -201,6 +206,39 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete Expense
+      tags:
+      - Expenses
+  /api/financial-advice:
+    get:
+      consumes:
+      - application/json
+      description: Provides financial advice based on the user's expenses
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Financial advice provided successfully
+          schema:
+            $ref: '#/definitions/geminiAnalysis.FinancialAdviceResponse'
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Failed to generate financial advice
+          schema:
+            type: string
+      summary: Generate Financial Advice
       tags:
       - Expenses
   /api/income:
@@ -488,7 +526,6 @@ paths:
           description: Error registering user
           schema:
             type: string
-      summary: Register a new user
       tags:
       - Auth
 swagger: "2.0"

@@ -205,6 +205,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/financial-advice": {
+            "get": {
+                "description": "Provides financial advice based on the user's expenses",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "Generate Financial Advice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Financial advice provided successfully",
+                        "schema": {
+                            "$ref": "#/definitions/geminiAnalysis.FinancialAdviceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to generate financial advice",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/income": {
             "get": {
                 "security": [
@@ -606,7 +656,6 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Register a new user",
                 "parameters": [
                     {
                         "description": "User Information",
@@ -712,6 +761,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "description": {
+                    "type": "string"
+                }
+            }
+        },
+        "geminiAnalysis.FinancialAdviceResponse": {
+            "type": "object",
+            "properties": {
+                "advice": {
                     "type": "string"
                 }
             }
